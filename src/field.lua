@@ -30,6 +30,24 @@ function Field.new(width, height)
     return self
 end
 
+function Field:resize(newW, newH)
+    if newW == self.width and newH == self.height then return end
+    self.width = newW
+    self.height = newH
+    self.decorations = {}
+    self:generateDecorations()
+    -- Regenerate grass map
+    self.grassMap = {}
+    local cols = math.ceil(self.width / TILE_SIZE)
+    local rows = math.ceil(self.height / TILE_SIZE)
+    for r = 0, rows - 1 do
+        self.grassMap[r] = {}
+        for c = 0, cols - 1 do
+            self.grassMap[r][c] = GRASS_COLORS[math.random(#GRASS_COLORS)]
+        end
+    end
+end
+
 function Field:generateDecorations()
     -- Scatter bushes and rocks
     local types = {"bush", "rock", "flowers", "tree"}

@@ -46,4 +46,31 @@ return {
         effectPerLevel = 2,  -- +2 slots per level
         maxLevel = 20,
     },
+    {
+        id = "offline_rate",
+        name = "Caretaker",
+        description = "Offline earnings +%d%%",
+        baseCost = 80,
+        costScale = 1.8,
+        effectPerLevel = 10,  -- +10% offline rate per level (base 10%)
+        maxLevel = 20,
+    },
+    {
+        id = "offline_cap",
+        name = "Night Watch",
+        description = "Offline cap +%d hrs",
+        baseCost = 200,
+        costScale = 2.2,
+        effectPerLevel = 2,  -- +2 hours per level (base 2h, max ~24h with upgrades)
+        maxLevel = 11,
+    },
+    {
+        id = "plot_size",
+        name = "Expand Plot",
+        description = "+%d%% field size",
+        baseCost = 150,
+        costScale = 2.5,
+        effectPerLevel = 25,  -- +25% field size per level
+        maxLevel = 10,
+    },
 }

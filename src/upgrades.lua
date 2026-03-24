@@ -67,6 +67,22 @@ function Upgrades:getFoodValueBonus()
     return self:getEffect("food_value") / 100
 end
 
+function Upgrades:getOfflineRate()
+    -- Base 10% + upgrade bonus
+    return 0.10 + self:getEffect("offline_rate") / 100
+end
+
+function Upgrades:getOfflineCapHours()
+    -- Base 2h + 2h per level
+    local data = self:getData("offline_cap")
+    if not data then return 2 end
+    return 2 + data.effectPerLevel * self:getLevel("offline_cap")
+end
+
+function Upgrades:getPlotSizeBonus()
+    return self:getEffect("plot_size") / 100
+end
+
 function Upgrades:getExtraCapacity()
     local data = self:getData("max_animals")
     if not data then return 0 end

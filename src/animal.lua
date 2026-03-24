@@ -46,10 +46,11 @@ function Animal:getMaxTier()
     return #self:getAnimalData().tiers
 end
 
-function Animal:getEarning(earningBonus, prestigeBonus)
+function Animal:getEarning(earningBonus, prestigeBonus, animalLevel)
     local data = self:getAnimalData()
     local tierData = self:getTierData()
-    return data.baseEarning * tierData.earningMult * (1 + (earningBonus or 0)) * (1 + (prestigeBonus or 0))
+    local levelBonus = 1 + (animalLevel or 0) * 0.10
+    return data.baseEarning * tierData.earningMult * levelBonus * (1 + (earningBonus or 0)) * (1 + (prestigeBonus or 0))
 end
 
 function Animal:update(dt, fieldW, fieldH, foods, game)
@@ -116,10 +117,13 @@ function Animal:update(dt, fieldW, fieldH, foods, game)
                 self.targetFood.eaten = true
                 self.targetFood.respawnTimer = self.targetFood.respawnTime
                 if game then
-                    local earning = self:getEarning(game:getEarningBonus(), game:getPrestigeEarningBonus())
+                    local lvl = game:getAnimalLevel(self.type)
+                    local earning = self:getEarning(game:getEarningBonus(), game:getPrestigeEarningBonus(), lvl)
                     local foodMult = 1 + (game:getFoodValueBonus())
                     local amount = earning * foodMult * self.targetFood.value
                     game:addMoney(amount)
+                    -- Grant XP to this animal type (higher tier = more XP)
+                    game:addAnimalXP(self.type, 1 + (self.tier - 1))
                     if game.particles then
                         game.particles:spawnCoinPopup(self.x, self.y - self.size * 0.5, amount)
                     end
@@ -216,8 +220,9 @@ function Animal:triggerMergeAnimation()
     self.size = tierData.size
 end
 
-function Animal:setSpeed(baseMultiplier, prestigeBonus)
-    self.speed = self.baseSpeed * (1 + (baseMultiplier or 0)) * (1 + (prestigeBonus or 0))
+function Animal:setSpeed(baseMultiplier, prestigeBonus, animalLevel)
+    local levelBonus = (animalLevel or 0) * 0.05
+    self.speed = self.baseSpeed * (1 + (baseMultiplier or 0) + levelBonus) * (1 + (prestigeBonus or 0))
 end
 
 return Animal

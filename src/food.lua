@@ -17,6 +17,11 @@ function FoodManager.new(fieldW, fieldH)
     return self
 end
 
+function FoodManager:setFieldBounds(w, h)
+    self.fieldW = w
+    self.fieldH = h
+end
+
 function FoodManager:spawnFood()
     if #self.foods >= self.maxFood then return end
     local margin = 80

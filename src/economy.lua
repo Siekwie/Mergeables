@@ -33,4 +33,14 @@ function Economy.formatMoney(amount)
     end
 end
 
+-- Calculate animal level-up cost
+function Economy.animalLevelUpCost(animalData, level)
+    return math.floor(animalData.levelUpBaseCost * (animalData.levelUpCostScale ^ level))
+end
+
+-- Calculate XP needed for next animal level
+function Economy.animalXPNeeded(animalData, level)
+    return math.floor(animalData.xpPerLevel * (animalData.xpScale ^ level))
+end
+
 return Economy

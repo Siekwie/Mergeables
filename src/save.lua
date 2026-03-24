@@ -29,6 +29,11 @@ function Save.load()
     return state
 end
 
+function Save.getFileModTime()
+    local info = love.filesystem.getInfo(SAVE_FILE)
+    return info and info.modtime or nil
+end
+
 function Save.exists()
     return love.filesystem.getInfo(SAVE_FILE) ~= nil
 end

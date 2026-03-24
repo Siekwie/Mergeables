@@ -8,7 +8,7 @@ HUD.__index = HUD
 function HUD.new()
     local self = setmetatable({}, HUD)
     self.displayMoney = 0
-    self.tabs = {"Shop", "Upgrades", "Prestige"}
+    self.tabs = {"Inventory", "Upgrades", "Prestige"}
     self.activeTab = nil
     self.tabButtons = {}
     self.onTabClick = nil  -- callback(tabName)
