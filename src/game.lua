@@ -13,6 +13,7 @@ local HUD = require("src.ui.hud")
 local Shop = require("src.ui.shop")
 local UpgradePanel = require("src.ui.upgrade_panel")
 local PrestigePanel = require("src.ui.prestige_panel")
+local SettingsPanel = require("src.ui.settings_panel")
 
 local Game = {}
 Game.__index = Game
@@ -52,6 +53,7 @@ function Game.new()
     self.shop = Shop.new()
     self.upgradePanel = UpgradePanel.new()
     self.prestigePanel = PrestigePanel.new()
+    self.settingsPanel = SettingsPanel.new()
     self.activePanel = nil
     self.panelVisible = true
 
@@ -106,8 +108,9 @@ end
 
 function Game:getFieldSize()
     local bonus = self.upgrades and self.upgrades:getPlotSizeBonus() or 0
-    local w = math.floor(BASE_FIELD_W * (1 + bonus))
-    local h = math.floor(BASE_FIELD_H * (1 + bonus))
+    local prestigeBonus = self.prestige and self.prestige:getPlotSizeBonus() or 0
+    local w = math.floor(BASE_FIELD_W * (1 + bonus + prestigeBonus))
+    local h = math.floor(BASE_FIELD_H * (1 + bonus + prestigeBonus))
     return w, h
 end
 
@@ -142,6 +145,7 @@ function Game:togglePanel(panelName)
         Inventory = self.shop,
         Upgrades = self.upgradePanel,
         Prestige = self.prestigePanel,
+        Settings = self.settingsPanel,
     }
     local panel = panels[panelName]
     if not panel then return end
@@ -266,10 +270,11 @@ function Game:draw()
 
     -- Draw panel background area (solid, right side)
     if self.panelVisible then
-        love.graphics.setColor(0.10, 0.10, 0.12, 1.0)
+        love.graphics.setColor(0.11, 0.11, 0.13, 1.0)
         love.graphics.rectangle("fill", gameW, 50, sw - gameW, sh - 50)
-        love.graphics.setColor(0.45, 0.65, 0.40, 0.6)
-        love.graphics.rectangle("fill", gameW, 50, 2, sh - 50)
+        -- Subtle separator
+        love.graphics.setColor(0.35, 0.50, 0.35, 0.4)
+        love.graphics.rectangle("fill", gameW, 50, 1, sh - 50)
     end
 
     -- Draw UI (screen space)
@@ -487,34 +492,150 @@ function Game:applyUpgrades()
     self:applyFieldSize()
 end
 
-function Game:doPrestige()
+-- Prestige Tier 1: Resets cash, animals, animal levels
+-- Keeps: normal upgrades, all prestige progress
+function Game:doPrestigeT1()
     local points = Economy.calcPrestigePoints(self.totalEarned)
+    local bonus = self.prestige:getT1CurrencyBonus()
+    if bonus > 0 then
+        points = math.floor(points * (1 + bonus))
+    end
     if points <= 0 then return end
 
-    self.prestige:addPoints(points)
+    self.prestige:addPoints(1, points)
 
-    -- Reset run state
+    -- Give starting T1 currency from T2 upgrades
+    local startingStars = self.prestige:getStartingT1Currency()
+    if startingStars > 0 then
+        self.prestige.tiers[1].points = self.prestige.tiers[1].points + startingStars
+    end
+
+    -- Reset: cash, animals, animal levels
     self.money = 0
     self.totalEarned = 0
     self.animals = {}
-    self.upgrades:reset()
     self.draggedAnimal = nil
     self.mergeTarget = nil
-
-    -- Reset animal levels
     for k, v in pairs(self.animalLevels) do
         v.level = 0
         v.xp = 0
     end
 
-    -- Reset field to base size
+    -- Rebuild field and food with current size (upgrades preserved)
     local fw, fh = self:getFieldSize()
     self.field:resize(fw, fh)
     self.foodManager = FoodManager.new(fw, fh)
 
-    -- Spawn with prestige bonuses
     self:spawnStartingAnimals()
     self:saveGame()
+end
+
+-- Prestige Tier 2: Resets everything T1 resets + T1 currency/upgrades + normal upgrades
+-- Keeps: T2 and T3 progress
+function Game:doPrestigeT2()
+    local points = Economy.calcT2Points(self.prestige.tiers[1].totalEarned)
+    local bonus = self.prestige:getT2CurrencyBonus()
+    if bonus > 0 then
+        points = math.floor(points * (1 + bonus))
+    end
+    if points <= 0 then return end
+
+    self.prestige:addPoints(2, points)
+
+    -- Give starting T2 currency from T3 upgrades
+    local startingCrowns = self.prestige:getStartingT2Currency()
+    if startingCrowns > 0 then
+        self.prestige.tiers[2].points = self.prestige.tiers[2].points + startingCrowns
+    end
+
+    -- Reset T1
+    self.prestige:resetTier(1)
+
+    -- Reset normal upgrades
+    self.upgrades:reset()
+
+    -- Reset: cash, animals, animal levels
+    self.money = 0
+    self.totalEarned = 0
+    self.animals = {}
+    self.draggedAnimal = nil
+    self.mergeTarget = nil
+    for k, v in pairs(self.animalLevels) do
+        v.level = 0
+        v.xp = 0
+    end
+
+    local fw, fh = self:getFieldSize()
+    self.field:resize(fw, fh)
+    self.foodManager = FoodManager.new(fw, fh)
+
+    self:spawnStartingAnimals()
+    self:saveGame()
+end
+
+-- Prestige Tier 3: Resets everything except T3 progress
+-- Keeps: only T3 upgrades
+function Game:doPrestigeT3()
+    local points = Economy.calcT3Points(self.prestige.tiers[2].totalEarned)
+    if points <= 0 then return end
+
+    self.prestige:addPoints(3, points)
+
+    -- Reset T1 and T2
+    self.prestige:resetTier(1)
+    self.prestige:resetTier(2)
+
+    -- Reset normal upgrades
+    self.upgrades:reset()
+
+    -- Reset: cash, animals, animal levels
+    self.money = 0
+    self.totalEarned = 0
+    self.animals = {}
+    self.draggedAnimal = nil
+    self.mergeTarget = nil
+    for k, v in pairs(self.animalLevels) do
+        v.level = 0
+        v.xp = 0
+    end
+
+    local fw, fh = self:getFieldSize()
+    self.field:resize(fw, fh)
+    self.foodManager = FoodManager.new(fw, fh)
+
+    self:spawnStartingAnimals()
+    self:saveGame()
+end
+
+function Game:reloadGame()
+    -- Reset everything to defaults
+    self.money = 0
+    self.totalEarned = 0
+    self.animals = {}
+    self.draggedAnimal = nil
+    self.mergeTarget = nil
+
+    local animalsData = require("data.animals")
+    for id, _ in pairs(animalsData) do
+        self.animalLevels[id] = { level = 0, xp = 0 }
+    end
+
+    self.upgrades:reset()
+    self.prestige = Prestige.new()
+
+    -- Reset field and food to base size
+    local fw, fh = self:getFieldSize()
+    self.field:resize(fw, fh)
+    self.foodManager = FoodManager.new(fw, fh)
+
+    -- Try to load save (if it exists)
+    self:loadGame()
+
+    if #self.animals == 0 then
+        self:spawnStartingAnimals()
+    end
+
+    self:applyFieldSize()
 end
 
 -- Save/Load

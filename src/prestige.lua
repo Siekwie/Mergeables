@@ -6,134 +6,180 @@ Prestige.__index = Prestige
 
 function Prestige.new()
     local self = setmetatable({}, Prestige)
-    self.points = 0
-    self.totalEarnedPoints = 0
-    self.unlockedNodes = {}
+    -- Each tier has its own currency and upgrade levels
+    self.tiers = {}
+    for t = 1, 3 do
+        self.tiers[t] = {
+            points = 0,
+            totalEarned = 0,
+            levels = {},
+        }
+        for _, upg in ipairs(prestigeData[t].upgrades) do
+            self.tiers[t].levels[upg.id] = 0
+        end
+    end
     return self
 end
 
-function Prestige:getNodes()
-    return prestigeData
+-- Get upgrade level for a specific tier
+function Prestige:getLevel(tier, upgId)
+    return self.tiers[tier] and self.tiers[tier].levels[upgId] or 0
 end
 
-function Prestige:isUnlocked(nodeId)
-    return self.unlockedNodes[nodeId] == true
+-- Get upgrade data by id within a tier
+function Prestige:getUpgradeData(tier, upgId)
+    for _, upg in ipairs(prestigeData[tier].upgrades) do
+        if upg.id == upgId then return upg end
+    end
+    return nil
 end
 
-function Prestige:canUnlock(nodeId)
-    for _, node in ipairs(prestigeData) do
-        if node.id == nodeId then
-            if self:isUnlocked(nodeId) then return false end
-            if self.points < node.cost then return false end
-            -- Check prerequisites
-            for _, req in ipairs(node.requires) do
-                if not self:isUnlocked(req) then return false end
+-- Cost for next level of an upgrade
+function Prestige:getUpgradeCost(tier, upgId)
+    local upg = self:getUpgradeData(tier, upgId)
+    if not upg then return math.huge end
+    local level = self:getLevel(tier, upgId)
+    return math.floor(upg.baseCost * (upg.costScale ^ level))
+end
+
+function Prestige:canBuyUpgrade(tier, upgId)
+    local upg = self:getUpgradeData(tier, upgId)
+    if not upg then return false end
+    local level = self:getLevel(tier, upgId)
+    if level >= upg.maxLevel then return false end
+    local cost = self:getUpgradeCost(tier, upgId)
+    return self.tiers[tier].points >= cost
+end
+
+function Prestige:buyUpgrade(tier, upgId)
+    if not self:canBuyUpgrade(tier, upgId) then return false end
+    local cost = self:getUpgradeCost(tier, upgId)
+    self.tiers[tier].points = self.tiers[tier].points - cost
+    self.tiers[tier].levels[upgId] = self:getLevel(tier, upgId) + 1
+    return true
+end
+
+function Prestige:addPoints(tier, points)
+    self.tiers[tier].points = self.tiers[tier].points + points
+    self.tiers[tier].totalEarned = self.tiers[tier].totalEarned + points
+end
+
+-- Reset a tier's currency and upgrades (used by higher tier prestiges)
+function Prestige:resetTier(tier)
+    self.tiers[tier].points = 0
+    self.tiers[tier].totalEarned = 0
+    for id in pairs(self.tiers[tier].levels) do
+        self.tiers[tier].levels[id] = 0
+    end
+end
+
+-- Sum effect of a given type across specified tiers
+function Prestige:sumEffect(effectType, tiers)
+    local total = 0
+    for _, t in ipairs(tiers) do
+        for _, upg in ipairs(prestigeData[t].upgrades) do
+            if upg.effect.type == effectType then
+                local level = self:getLevel(t, upg.id)
+                if level > 0 then
+                    if upg.effect.perLevel then
+                        total = total + upg.effect.perLevel * level
+                    elseif upg.effect.value then
+                        total = total + upg.effect.value
+                    end
+                end
             end
-            return true
         end
     end
-    return false
+    return total
 end
 
-function Prestige:unlock(nodeId)
-    for _, node in ipairs(prestigeData) do
-        if node.id == nodeId then
-            self.points = self.points - node.cost
-            self.unlockedNodes[nodeId] = true
-            return true
-        end
-    end
-    return false
+-- Sum effect across all 3 tiers
+function Prestige:sumAllEffect(effectType)
+    return self:sumEffect(effectType, {1, 2, 3})
 end
 
-function Prestige:calcPointsFromRun(totalEarned)
-    return Economy.calcPrestigePoints(totalEarned)
-end
-
-function Prestige:addPoints(points)
-    self.points = self.points + points
-    self.totalEarnedPoints = self.totalEarnedPoints + points
-end
-
--- Get all unlocked animal types from skill tree
+-- Unlock animal checks (tier 1 only, one-time unlocks)
 function Prestige:getUnlockedAnimals()
-    local animals = {"cow"}  -- cow is always unlocked
-    for _, node in ipairs(prestigeData) do
-        if self:isUnlocked(node.id) and node.effect.type == "unlock_animal" then
-            table.insert(animals, node.effect.value)
+    local animals = {"cow"}
+    for _, upg in ipairs(prestigeData[1].upgrades) do
+        if upg.effect.type == "unlock_animal" then
+            local level = self:getLevel(1, upg.id)
+            if level >= 1 then
+                table.insert(animals, upg.effect.value)
+            end
         end
     end
     return animals
 end
 
--- Get total earning multiplier from prestige
 function Prestige:getEarningMultiplier()
-    local mult = 0
-    for _, node in ipairs(prestigeData) do
-        if self:isUnlocked(node.id) and node.effect.type == "earning_multiplier" then
-            mult = mult + node.effect.value
-        end
-    end
-    return mult
+    return self:sumAllEffect("earning_multiplier")
 end
 
--- Get total speed bonus from prestige
 function Prestige:getSpeedBonus()
-    local bonus = 0
-    for _, node in ipairs(prestigeData) do
-        if self:isUnlocked(node.id) and node.effect.type == "speed_bonus" then
-            bonus = bonus + node.effect.value
-        end
-    end
-    return bonus
+    return self:sumAllEffect("speed_bonus")
 end
 
--- Get food spawn bonus from prestige
 function Prestige:getFoodSpawnBonus()
-    local bonus = 0
-    for _, node in ipairs(prestigeData) do
-        if self:isUnlocked(node.id) and node.effect.type == "food_spawn_bonus" then
-            bonus = bonus + node.effect.value
-        end
-    end
-    return bonus
+    return self:sumAllEffect("food_spawn_bonus")
 end
 
--- Get extra capacity from prestige
 function Prestige:getExtraCapacity()
-    local cap = 0
-    for _, node in ipairs(prestigeData) do
-        if self:isUnlocked(node.id) and node.effect.type == "extra_capacity" then
-            cap = cap + node.effect.value
-        end
-    end
-    return cap
+    return math.floor(self:sumAllEffect("extra_capacity"))
 end
 
--- Get starting money from prestige
 function Prestige:getStartingMoney()
-    local money = 0
-    for _, node in ipairs(prestigeData) do
-        if self:isUnlocked(node.id) and node.effect.type == "starting_money" then
-            money = money + node.effect.value
-        end
-    end
-    return money
+    return self:sumEffect("starting_money", {1})
 end
 
+function Prestige:getPlotSizeBonus()
+    return self:sumAllEffect("plot_size_bonus")
+end
+
+function Prestige:getStartingT1Currency()
+    return math.floor(self:sumEffect("starting_t1_currency", {2}))
+end
+
+function Prestige:getStartingT2Currency()
+    return math.floor(self:sumEffect("starting_t2_currency", {3}))
+end
+
+function Prestige:getT1CurrencyBonus()
+    return self:sumEffect("t1_currency_bonus", {3})
+end
+
+function Prestige:getT2CurrencyBonus()
+    return self:sumEffect("t2_currency_bonus", {3})
+end
+
+-- State serialization
 function Prestige:getState()
-    return {
-        points = self.points,
-        totalEarnedPoints = self.totalEarnedPoints,
-        unlockedNodes = self.unlockedNodes,
-    }
+    local state = {}
+    for t = 1, 3 do
+        state[t] = {
+            points = self.tiers[t].points,
+            totalEarned = self.tiers[t].totalEarned,
+            levels = {},
+        }
+        for id, lvl in pairs(self.tiers[t].levels) do
+            state[t].levels[id] = lvl
+        end
+    end
+    return state
 end
 
 function Prestige:loadState(state)
-    if state then
-        self.points = state.points or 0
-        self.totalEarnedPoints = state.totalEarnedPoints or 0
-        self.unlockedNodes = state.unlockedNodes or {}
+    if not state then return end
+    for t = 1, 3 do
+        if state[t] then
+            self.tiers[t].points = state[t].points or 0
+            self.tiers[t].totalEarned = state[t].totalEarned or 0
+            if state[t].levels then
+                for id, lvl in pairs(state[t].levels) do
+                    self.tiers[t].levels[id] = lvl
+                end
+            end
+        end
     end
 end
 

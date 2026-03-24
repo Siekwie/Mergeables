@@ -148,8 +148,11 @@ function Shop:draw()
         local rowY = cy + y - self.scrollY
 
         -- Row background
-        love.graphics.setColor(0.15, 0.15, 0.18, 0.8)
-        love.graphics.rectangle("fill", cx, rowY, cw, ROW_HEIGHT, 4, 4)
+        love.graphics.setColor(0.15, 0.15, 0.18, 0.7)
+        love.graphics.rectangle("fill", cx, rowY, cw, ROW_HEIGHT, 6, 6)
+        -- Subtle top highlight
+        love.graphics.setColor(1, 1, 1, 0.03)
+        love.graphics.rectangle("fill", cx, rowY, cw, ROW_HEIGHT * 0.4, 6, 6)
 
         if unlocked[animalId] then
             self:drawUnlockedRow(cx, rowY, cw, data, animalId, game)
@@ -201,7 +204,7 @@ function Shop:drawLockedRow(cx, rowY, cw, data)
     love.graphics.print(data.name, cx + 55, rowY + ROW_HEIGHT / 2 - 14)
 
     love.graphics.setColor(0.45, 0.45, 0.45)
-    love.graphics.print("Unlock via Prestige tree", cx + 55, rowY + ROW_HEIGHT / 2 + 4)
+    love.graphics.print("Unlock via Prestige", cx + 55, rowY + ROW_HEIGHT / 2 + 4)
 end
 
 function Shop:drawUnlockedRow(cx, rowY, cw, data, animalId, game)

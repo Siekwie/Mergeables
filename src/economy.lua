@@ -10,10 +10,22 @@ function Economy.animalCost(animalData, ownedCount)
     return math.floor(animalData.baseCost * (animalData.costScale ^ ownedCount))
 end
 
--- Calculate prestige points earned from total money this run
+-- Prestige tier 1: Stars from total money earned
 function Economy.calcPrestigePoints(totalEarned)
     if totalEarned < 1000 then return 0 end
     return math.floor(math.sqrt(totalEarned / 1000))
+end
+
+-- Prestige tier 2: Crowns from total Stars earned
+function Economy.calcT2Points(totalT1Earned)
+    if totalT1Earned < 10 then return 0 end
+    return math.floor(math.sqrt(totalT1Earned / 10))
+end
+
+-- Prestige tier 3: Diamonds from total Crowns earned
+function Economy.calcT3Points(totalT2Earned)
+    if totalT2Earned < 5 then return 0 end
+    return math.floor(math.sqrt(totalT2Earned / 5))
 end
 
 -- Format money for display
