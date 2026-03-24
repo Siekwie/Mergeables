@@ -28,14 +28,32 @@ function Camera:update(dt, worldW, worldH)
     self.y = util.lerp(self.y, self.targetY, self.smoothing * dt)
     self.scale = util.lerp(self.scale, self.targetScale, self.smoothing * dt)
 
-    -- Clamp to world bounds
+    -- Soft clamp: allow panning freely but keep at least half the field visible
     local sw, sh = util.screenW(), util.screenH()
     local viewW = sw / self.scale
     local viewH = sh / self.scale
-    self.x = util.clamp(self.x, 0, math.max(0, worldW - viewW))
-    self.y = util.clamp(self.y, 0, math.max(0, worldH - viewH))
-    self.targetX = util.clamp(self.targetX, 0, math.max(0, worldW - viewW))
-    self.targetY = util.clamp(self.targetY, 0, math.max(0, worldH - viewH))
+    local margin = 200 / self.scale  -- extra margin so you don't lose the field
+    local minX = -viewW * 0.5 + margin
+    local minY = -viewH * 0.5 + margin
+    local maxX = worldW - viewW * 0.5 - margin
+    local maxY = worldH - viewH * 0.5 - margin
+
+    -- If field is smaller than view, center it
+    if maxX < minX then
+        local center = worldW / 2 - viewW / 2
+        minX = center
+        maxX = center
+    end
+    if maxY < minY then
+        local center = worldH / 2 - viewH / 2
+        minY = center
+        maxY = center
+    end
+
+    self.x = util.clamp(self.x, minX, maxX)
+    self.y = util.clamp(self.y, minY, maxY)
+    self.targetX = util.clamp(self.targetX, minX, maxX)
+    self.targetY = util.clamp(self.targetY, minY, maxY)
 end
 
 function Camera:apply()
@@ -70,13 +88,15 @@ function Camera:zoom(amount, mx, my)
 end
 
 function Camera:resetZoom(worldW, worldH)
-    -- Fit the entire field in view
+    -- Fit the entire field in view, centered
     local sw, sh = util.screenW(), util.screenH()
     local scaleX = sw / worldW
     local scaleY = sh / worldH
     self.targetScale = math.min(scaleX, scaleY, 1.0)
-    self.targetX = 0
-    self.targetY = 0
+    local viewW = sw / self.targetScale
+    local viewH = sh / self.targetScale
+    self.targetX = (worldW - viewW) / 2
+    self.targetY = (worldH - viewH) / 2
 end
 
 function Camera:startDrag(mx, my)

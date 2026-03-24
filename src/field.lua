@@ -82,13 +82,17 @@ function Field:decorationColor(dtype)
 end
 
 function Field:draw()
-    -- Draw grass tiles
+    -- Draw grass tiles, clamping edge tiles to field bounds
     local cols = math.ceil(self.width / TILE_SIZE)
     local rows = math.ceil(self.height / TILE_SIZE)
     for r = 0, rows - 1 do
         for c = 0, cols - 1 do
             love.graphics.setColor(self.grassMap[r][c])
-            love.graphics.rectangle("fill", c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            local tx = c * TILE_SIZE
+            local ty = r * TILE_SIZE
+            local tw = math.min(TILE_SIZE, self.width - tx)
+            local th = math.min(TILE_SIZE, self.height - ty)
+            love.graphics.rectangle("fill", tx, ty, tw, th)
         end
     end
 
