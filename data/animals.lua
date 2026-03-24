@@ -1,0 +1,68 @@
+-- Animal type definitions
+-- Each type has tiers that animals evolve through via merging
+return {
+    cow = {
+        id = "cow",
+        name = "Cow",
+        bodyColor = {0.92, 0.90, 0.85},
+        spotColor = {0.15, 0.12, 0.10},
+        baseEarning = 1,
+        baseSpeed = 28,
+        baseCost = 10,
+        costScale = 1.15,
+        tiers = {
+            { name = "Calf",        size = 40, earningMult = 1 },
+            { name = "Cow",         size = 56, earningMult = 3 },
+            { name = "Bull",        size = 72, earningMult = 10 },
+            { name = "Golden Bull", size = 88, earningMult = 35 },
+        },
+    },
+    chicken = {
+        id = "chicken",
+        name = "Chicken",
+        bodyColor = {0.95, 0.85, 0.40},
+        spotColor = {0.90, 0.35, 0.15},
+        baseEarning = 0.5,
+        baseSpeed = 40,
+        baseCost = 50,
+        costScale = 1.18,
+        tiers = {
+            { name = "Chick",          size = 28, earningMult = 1 },
+            { name = "Hen",            size = 40, earningMult = 3 },
+            { name = "Rooster",        size = 52, earningMult = 10 },
+            { name = "Golden Rooster", size = 64, earningMult = 35 },
+        },
+    },
+    pig = {
+        id = "pig",
+        name = "Pig",
+        bodyColor = {0.95, 0.72, 0.70},
+        spotColor = {0.85, 0.50, 0.48},
+        baseEarning = 2,
+        baseSpeed = 22,
+        baseCost = 200,
+        costScale = 1.20,
+        tiers = {
+            { name = "Piglet",     size = 36, earningMult = 1 },
+            { name = "Pig",        size = 52, earningMult = 3 },
+            { name = "Boar",       size = 68, earningMult = 10 },
+            { name = "Golden Boar",size = 84, earningMult = 35 },
+        },
+    },
+    sheep = {
+        id = "sheep",
+        name = "Sheep",
+        bodyColor = {0.95, 0.95, 0.95},
+        spotColor = {0.20, 0.20, 0.20},
+        baseEarning = 1.5,
+        baseSpeed = 25,
+        baseCost = 500,
+        costScale = 1.22,
+        tiers = {
+            { name = "Lamb",         size = 36, earningMult = 1 },
+            { name = "Sheep",        size = 52, earningMult = 3 },
+            { name = "Ram",          size = 68, earningMult = 10 },
+            { name = "Golden Ram",   size = 84, earningMult = 35 },
+        },
+    },
+}
