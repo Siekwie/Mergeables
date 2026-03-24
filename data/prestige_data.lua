@@ -29,6 +29,12 @@ return {
                 effect = { type = "unlock_animal", value = "sheep" },
             },
             {
+                id = "p1_unlock_goat", name = "Goat Cliff",
+                description = "Unlock goats",
+                baseCost = 10, costScale = 1, maxLevel = 1,
+                effect = { type = "unlock_animal", value = "goat" },
+            },
+            {
                 id = "p1_earning", name = "Keen Eye",
                 description = "+15%% earnings per level",
                 baseCost = 2, costScale = 1.6, maxLevel = 10,
