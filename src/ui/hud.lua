@@ -12,7 +12,11 @@ function HUD.new()
     self.activeTab = nil
     self.tabButtons = {}
     self.onTabClick = nil  -- callback(tabName)
+    self.onResetZoom = nil  -- callback()
+    self.onTogglePanel = nil  -- callback()
     self.fullscreenBtn = nil
+    self.resetZoomBtn = nil
+    self.togglePanelBtn = nil
     self:rebuildButtons()
     return self
 end
@@ -50,6 +54,30 @@ function HUD:rebuildButtons()
             love.window.setFullscreen(not isFs, "desktop")
         end,
     })
+
+    -- Reset Zoom button (left side, after info)
+    self.resetZoomBtn = Button.new({
+        x = 16, y = 10, w = 60, h = 30,
+        text = "Fit",
+        color = {0.30, 0.35, 0.50},
+        onClick = function()
+            if self.onResetZoom then
+                self.onResetZoom()
+            end
+        end,
+    })
+
+    -- Toggle Panel button (just before tab buttons)
+    self.togglePanelBtn = Button.new({
+        x = startX - 40, y = 10, w = 30, h = 30,
+        text = ">",
+        color = {0.35, 0.35, 0.40},
+        onClick = function()
+            if self.onTogglePanel then
+                self.onTogglePanel()
+            end
+        end,
+    })
 end
 
 function HUD:update(dt, game, mx, my)
@@ -73,32 +101,44 @@ function HUD:update(dt, game, mx, my)
         btn:update(mx, my)
     end
     self.fullscreenBtn:update(mx, my)
+    self.resetZoomBtn:update(mx, my)
+    self.togglePanelBtn:update(mx, my)
+
+    -- Update toggle panel button text
+    if game.panelVisible then
+        self.togglePanelBtn.text = ">"
+    else
+        self.togglePanelBtn.text = "<"
+    end
 end
 
 function HUD:draw(game)
     local sw = util.screenW()
 
     -- HUD background
-    love.graphics.setColor(0.08, 0.08, 0.10, 0.90)
+    love.graphics.setColor(0.08, 0.08, 0.10, 1.0)
     love.graphics.rectangle("fill", 0, 0, sw, 50)
     love.graphics.setColor(0.45, 0.65, 0.40, 0.5)
     love.graphics.rectangle("fill", 0, 49, sw, 1)
 
     -- Money
     love.graphics.setColor(0.30, 0.85, 0.35)
-    love.graphics.print(Economy.formatMoney(self.displayMoney), 16, 14)
+    love.graphics.print(Economy.formatMoney(self.displayMoney), 90, 14)
 
     -- Animal count
     local maxAnimals = game:getMaxAnimals()
     local count = #game.animals
     love.graphics.setColor(0.85, 0.85, 0.80)
-    love.graphics.print("Animals: " .. count .. "/" .. maxAnimals, 180, 14)
+    love.graphics.print("Animals: " .. count .. "/" .. maxAnimals, 250, 14)
 
     -- Prestige points
     if game.prestige.totalEarnedPoints > 0 then
         love.graphics.setColor(1, 0.85, 0.25)
-        love.graphics.print("Stars: " .. game.prestige.points, 360, 14)
+        love.graphics.print("Stars: " .. game.prestige.points, 420, 14)
     end
+
+    -- Reset Zoom button
+    self.resetZoomBtn:draw()
 
     -- Tab buttons
     for i, btn in ipairs(self.tabButtons) do
@@ -110,6 +150,9 @@ function HUD:draw(game)
         btn:draw()
     end
 
+    -- Toggle Panel button
+    self.togglePanelBtn:draw()
+
     -- Fullscreen button
     self.fullscreenBtn:draw()
 end
@@ -120,6 +163,8 @@ function HUD:mousepressed(x, y, button)
         if btn:click() then return true end
     end
     if self.fullscreenBtn:click() then return true end
+    if self.resetZoomBtn:click() then return true end
+    if self.togglePanelBtn:click() then return true end
     return false
 end
 

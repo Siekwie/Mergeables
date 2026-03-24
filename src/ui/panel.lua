@@ -7,7 +7,7 @@ function Panel.new(opts)
     local self = setmetatable({}, Panel)
     self.title = opts.title or "Panel"
     self.visible = opts.visible or false
-    self.bgColor = opts.bgColor or {0.12, 0.12, 0.15, 0.92}
+    self.bgColor = opts.bgColor or {0.12, 0.12, 0.15, 1.0}
     self.titleColor = opts.titleColor or {0.95, 0.90, 0.70}
     self.scrollY = 0
     self.maxScrollY = 0
@@ -51,7 +51,7 @@ function Panel:drawBackground()
     love.graphics.rectangle("fill", x, y, 3, h)
 
     -- Title bar
-    love.graphics.setColor(0.08, 0.08, 0.10, 0.95)
+    love.graphics.setColor(0.08, 0.08, 0.10, 1.0)
     love.graphics.rectangle("fill", x, y, w, 36)
     love.graphics.setColor(self.titleColor)
     local font = love.graphics.getFont()

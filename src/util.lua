@@ -85,7 +85,11 @@ function util.serialize(val, indent)
 end
 
 function util.deserialize(str)
-    local fn, err = load("return " .. str)
+    local code = str
+    if not str:match("^%s*return%s") then
+        code = "return " .. str
+    end
+    local fn, err = load(code)
     if fn then
         return fn()
     end

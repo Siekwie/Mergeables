@@ -43,9 +43,21 @@ function Game.new()
     self.upgradePanel = UpgradePanel.new()
     self.prestigePanel = PrestigePanel.new()
     self.activePanel = nil
+    self.panelVisible = true  -- toggle for hiding/showing the right panel area
 
     self.hud.onTabClick = function(tab)
         self:togglePanel(tab)
+    end
+    self.hud.onResetZoom = function()
+        self.camera:resetZoom(FIELD_W, FIELD_H)
+    end
+    self.hud.onTogglePanel = function()
+        self.panelVisible = not self.panelVisible
+        if not self.panelVisible and self.activePanel then
+            self.activePanel:hide()
+            self.activePanel = nil
+            self.hud.activeTab = nil
+        end
     end
 
     -- Drag state
@@ -85,6 +97,11 @@ function Game:spawnStartingAnimals()
 end
 
 function Game:togglePanel(panelName)
+    -- Show the panel area if hidden
+    if not self.panelVisible then
+        self.panelVisible = true
+    end
+
     local panels = {
         Shop = self.shop,
         Upgrades = self.upgradePanel,
@@ -131,7 +148,7 @@ function Game:update(dt)
 
     -- Update UI
     self.hud:update(dt, self, mx, my)
-    if self.activePanel then
+    if self.panelVisible and self.activePanel then
         self.activePanel:update(mx, my, self)
     end
 
@@ -159,7 +176,22 @@ function Game:update(dt)
     end
 end
 
+function Game:getGameAreaWidth()
+    local sw = util.screenW()
+    if self.panelVisible then
+        return math.floor(sw * 0.70)
+    end
+    return sw
+end
+
 function Game:draw()
+    local sw = util.screenW()
+    local sh = util.screenH()
+    local gameW = self:getGameAreaWidth()
+
+    -- Clip game rendering to the left game area
+    love.graphics.setScissor(0, 0, gameW, sh)
+
     -- Draw world (field + animals + food)
     self.camera:apply()
 
@@ -195,17 +227,28 @@ function Game:draw()
 
     self.camera:release()
 
+    love.graphics.setScissor()  -- Remove clipping
+
+    -- Draw panel background area (solid, right side)
+    if self.panelVisible then
+        love.graphics.setColor(0.10, 0.10, 0.12, 1.0)
+        love.graphics.rectangle("fill", gameW, 50, sw - gameW, sh - 50)
+        -- Separator line
+        love.graphics.setColor(0.45, 0.65, 0.40, 0.6)
+        love.graphics.rectangle("fill", gameW, 50, 2, sh - 50)
+    end
+
     -- Draw UI (screen space)
     self.hud:draw(self)
 
-    if self.activePanel then
+    if self.activePanel and self.panelVisible then
         self.activePanel:draw()
     end
 
     -- Draw drag hint
     if self.draggedAnimal and not self.mergeTarget then
         love.graphics.setColor(1, 1, 1, 0.5)
-        love.graphics.printf("Drop on same animal to merge!", 0, util.screenH() - 30, util.screenW(), "center")
+        love.graphics.printf("Drop on same animal to merge!", 0, sh - 30, gameW, "center")
     end
 
     love.graphics.setColor(1, 1, 1, 1)
@@ -215,12 +258,8 @@ function Game:mousepressed(x, y, button)
     -- UI first (highest priority)
     if self.hud:mousepressed(x, y, button) then return end
 
-    if self.activePanel then
+    if self.panelVisible and self.activePanel then
         if self.activePanel:mousepressed(x, y, button) then return end
-        -- Click outside panel closes it
-        if not self.activePanel:containsPoint(x, y) and button == 1 then
-            -- Don't close, allow field interaction
-        end
     end
 
     -- Middle mouse: camera drag
@@ -276,9 +315,13 @@ end
 function Game:wheelmoved(x, y)
     local mx, my = love.mouse.getPosition()
     -- Check if over a panel
-    if self.activePanel and self.activePanel:wheelmoved(mx, my, x, y) then
+    if self.panelVisible and self.activePanel and self.activePanel:wheelmoved(mx, my, x, y) then
         return
     end
+    -- Check if over HUD
+    if my < 50 then return end
+    -- Zoom the camera
+    self.camera:zoom(y, mx, my)
 end
 
 function Game:keypressed(key)
@@ -297,6 +340,15 @@ function Game:keypressed(key)
             self.activePanel = nil
             self.hud.activeTab = nil
         end
+    elseif key == "tab" then
+        self.panelVisible = not self.panelVisible
+        if not self.panelVisible and self.activePanel then
+            self.activePanel:hide()
+            self.activePanel = nil
+            self.hud.activeTab = nil
+        end
+    elseif key == "home" then
+        self.camera:resetZoom(FIELD_W, FIELD_H)
     end
 end
 
