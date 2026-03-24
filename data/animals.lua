@@ -56,7 +56,7 @@ return {
         xpScale = 1.45,
         levelUpBaseCost = 100,
         levelUpCostScale = 1.9,
-        maxAnimalLevel = 10,
+        maxAnimalLevel = 12,
         tiers = {
             { name = "Piglet",     size = 36, earningMult = 1 },
             { name = "Pig",        size = 52, earningMult = 3 },
@@ -77,7 +77,7 @@ return {
         xpScale = 1.5,
         levelUpBaseCost = 200,
         levelUpCostScale = 2.0,
-        maxAnimalLevel = 10,
+        maxAnimalLevel = 13,
         tiers = {
             { name = "Lamb",         size = 36, earningMult = 1 },
             { name = "Sheep",        size = 52, earningMult = 4 },
