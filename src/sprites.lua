@@ -26,6 +26,8 @@ function Sprites.drawAnimal(animalType, tier, x, y, size, flipX, bobOffset)
         Sprites.drawPig(size, bc, sc, tier)
     elseif animalType == "sheep" then
         Sprites.drawSheep(size, bc, sc, tier)
+    elseif animalType == "cat" then
+        Sprites.drawCat(size, bc, sc, tier)
     else
         -- Fallback: generic blob
         love.graphics.setColor(bc)
@@ -242,6 +244,109 @@ function Sprites.drawSheep(size, bc, sc, tier)
     love.graphics.rectangle("fill", hw * 0.15, hh * 0.7, legW, legH)
     love.graphics.rectangle("fill", hw * 0.4, hh * 0.7, legW, legH)
 
+    if tier and tier >= 4 then
+        love.graphics.setColor(1, 0.85, 0.15, 0.15)
+        love.graphics.ellipse("fill", 0, 0, hw * 1.3, hh * 1.3)
+    end
+end
+
+function Sprites.drawCat(size, bc, sc, tier)
+    local hw = size * 0.38
+    local hh = size * 0.28
+
+    -- Body (horizontal ellipse)
+    love.graphics.setColor(bc)
+    love.graphics.ellipse("fill", 0, 0, hw, hh)
+
+    -- Tabby stripes on body
+    love.graphics.setColor(sc)
+    love.graphics.setLineWidth(math.max(1, size * 0.02))
+    love.graphics.line(-hw * 0.2, -hh * 0.6, -hw * 0.15, hh * 0.5)
+    love.graphics.line(hw * 0.05, -hh * 0.65, hw * 0.1, hh * 0.45)
+    love.graphics.line(hw * 0.3, -hh * 0.55, hw * 0.3, hh * 0.4)
+    love.graphics.setLineWidth(1)
+
+    -- Head (circle, offset forward)
+    love.graphics.setColor(bc)
+    love.graphics.circle("fill", hw * 0.72, -hh * 0.2, hw * 0.38)
+
+    -- Ears (pointed triangles)
+    love.graphics.setColor(bc)
+    love.graphics.polygon("fill",
+        hw * 0.50, -hh * 0.50,
+        hw * 0.58, -hh * 1.15,
+        hw * 0.72, -hh * 0.50
+    )
+    love.graphics.polygon("fill",
+        hw * 0.78, -hh * 0.50,
+        hw * 0.88, -hh * 1.12,
+        hw * 0.98, -hh * 0.48
+    )
+    -- Inner ear (accent color)
+    love.graphics.setColor(sc)
+    love.graphics.polygon("fill",
+        hw * 0.54, -hh * 0.55,
+        hw * 0.58, -hh * 0.95,
+        hw * 0.68, -hh * 0.55
+    )
+    love.graphics.polygon("fill",
+        hw * 0.82, -hh * 0.55,
+        hw * 0.88, -hh * 0.92,
+        hw * 0.94, -hh * 0.53
+    )
+
+    -- Eyes (green/yellow)
+    love.graphics.setColor(0.45, 0.75, 0.20)
+    love.graphics.circle("fill", hw * 0.62, -hh * 0.30, size * 0.035)
+    love.graphics.circle("fill", hw * 0.82, -hh * 0.28, size * 0.035)
+    -- Pupils
+    love.graphics.setColor(0.1, 0.1, 0.1)
+    love.graphics.circle("fill", hw * 0.63, -hh * 0.30, size * 0.018)
+    love.graphics.circle("fill", hw * 0.83, -hh * 0.28, size * 0.018)
+
+    -- Nose
+    love.graphics.setColor(sc)
+    love.graphics.circle("fill", hw * 0.72, -hh * 0.10, size * 0.025)
+
+    -- Whiskers
+    love.graphics.setColor(0.9, 0.9, 0.9)
+    love.graphics.setLineWidth(1)
+    -- Left whiskers
+    love.graphics.line(hw * 0.55, -hh * 0.10, hw * 0.20, -hh * 0.25)
+    love.graphics.line(hw * 0.55, -hh * 0.05, hw * 0.18, -hh * 0.05)
+    love.graphics.line(hw * 0.55, 0, hw * 0.22, hh * 0.15)
+    -- Right whiskers
+    love.graphics.line(hw * 0.90, -hh * 0.10, hw * 1.25, -hh * 0.25)
+    love.graphics.line(hw * 0.90, -hh * 0.05, hw * 1.28, -hh * 0.05)
+    love.graphics.line(hw * 0.90, 0, hw * 1.22, hh * 0.15)
+
+    -- Legs
+    love.graphics.setColor(bc)
+    local legW = hw * 0.1
+    local legH = hh * 0.45
+    love.graphics.rectangle("fill", -hw * 0.45, hh * 0.7, legW, legH)
+    love.graphics.rectangle("fill", -hw * 0.15, hh * 0.7, legW, legH)
+    love.graphics.rectangle("fill", hw * 0.15, hh * 0.7, legW, legH)
+    love.graphics.rectangle("fill", hw * 0.40, hh * 0.7, legW, legH)
+
+    -- Tail (curved series of circles)
+    love.graphics.setColor(bc)
+    local segments = 8
+    for i = 0, segments do
+        local t = i / segments
+        local tx = -hw * 0.85 - math.sin(t * math.pi * 0.8) * hw * 0.35
+        local ty = -hh * 0.1 - t * hh * 0.8
+        local r = hw * 0.08 * (1 - t * 0.3)
+        love.graphics.circle("fill", tx, ty, r)
+    end
+    -- Tail tip accent
+    love.graphics.setColor(sc)
+    love.graphics.circle("fill",
+        -hw * 0.85 - math.sin(math.pi * 0.8) * hw * 0.35,
+        -hh * 0.1 - hh * 0.8,
+        hw * 0.06)
+
+    -- Golden glow for max tier
     if tier and tier >= 4 then
         love.graphics.setColor(1, 0.85, 0.15, 0.15)
         love.graphics.ellipse("fill", 0, 0, hw * 1.3, hh * 1.3)
