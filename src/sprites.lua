@@ -285,6 +285,70 @@ function Sprites.drawFood(foodType, x, y, size)
         love.graphics.setColor(0.30, 0.60, 0.20)
         love.graphics.ellipse("fill", -size * 0.2, 0, size * 0.2, size * 0.06)
         love.graphics.ellipse("fill", size * 0.2, -size * 0.2, size * 0.2, size * 0.06)
+    elseif foodType == "mushrooms" then
+        -- Green mound
+        love.graphics.setColor(0.30, 0.65, 0.25)
+        love.graphics.ellipse("fill", 0, size * 0.15, size * 0.35, size * 0.12)
+        -- Stem
+        love.graphics.setColor(0.90, 0.88, 0.80)
+        love.graphics.rectangle("fill", -size * 0.06, -size * 0.1, size * 0.12, size * 0.25)
+        -- Cap
+        love.graphics.setColor(0.55, 0.30, 0.15)
+        love.graphics.ellipse("fill", 0, -size * 0.15, size * 0.22, size * 0.14)
+        -- White spots
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.circle("fill", -size * 0.08, -size * 0.17, size * 0.035)
+        love.graphics.circle("fill", size * 0.07, -size * 0.14, size * 0.03)
+        love.graphics.circle("fill", 0, -size * 0.22, size * 0.025)
+    elseif foodType == "fish" then
+        -- Blue puddle
+        love.graphics.setColor(0.40, 0.65, 0.90, 0.5)
+        love.graphics.ellipse("fill", 0, size * 0.1, size * 0.4, size * 0.12)
+        -- Fish body
+        love.graphics.setColor(0.55, 0.70, 0.85)
+        love.graphics.ellipse("fill", 0, -size * 0.05, size * 0.25, size * 0.12)
+        -- Tail
+        love.graphics.setColor(0.45, 0.60, 0.80)
+        love.graphics.polygon("fill",
+            -size * 0.22, -size * 0.05,
+            -size * 0.38, -size * 0.18,
+            -size * 0.38, size * 0.08
+        )
+        -- Eye
+        love.graphics.setColor(0.1, 0.1, 0.1)
+        love.graphics.circle("fill", size * 0.12, -size * 0.08, size * 0.03)
+    elseif foodType == "flowers" then
+        -- Stem
+        love.graphics.setColor(0.25, 0.60, 0.20)
+        love.graphics.setLineWidth(2)
+        love.graphics.line(0, size * 0.25, 0, -size * 0.05)
+        love.graphics.setLineWidth(1)
+        -- Petals (5 pink/purple circles around center)
+        love.graphics.setColor(0.85, 0.40, 0.70)
+        local petalR = size * 0.1
+        local centerY = -size * 0.15
+        for i = 0, 4 do
+            local angle = (i / 5) * math.pi * 2 - math.pi / 2
+            local px = math.cos(angle) * size * 0.12
+            local py = centerY + math.sin(angle) * size * 0.12
+            love.graphics.circle("fill", px, py, petalR)
+        end
+        -- Center
+        love.graphics.setColor(0.95, 0.85, 0.25)
+        love.graphics.circle("fill", 0, centerY, size * 0.07)
+    elseif foodType == "pumpkin" then
+        -- Body
+        love.graphics.setColor(0.90, 0.55, 0.15)
+        love.graphics.ellipse("fill", 0, 0, size * 0.3, size * 0.25)
+        -- Segment lines
+        love.graphics.setColor(0.75, 0.40, 0.10)
+        love.graphics.setLineWidth(1.5)
+        love.graphics.line(-size * 0.1, -size * 0.2, -size * 0.1, size * 0.2)
+        love.graphics.line(size * 0.1, -size * 0.2, size * 0.1, size * 0.2)
+        love.graphics.setLineWidth(1)
+        -- Stem
+        love.graphics.setColor(0.30, 0.55, 0.20)
+        love.graphics.rectangle("fill", -size * 0.04, -size * 0.32, size * 0.08, size * 0.1)
     end
 
     love.graphics.pop()
