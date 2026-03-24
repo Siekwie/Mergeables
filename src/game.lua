@@ -638,6 +638,24 @@ function Game:reloadGame()
     self:applyFieldSize()
 end
 
+-- Repulsion aura mechanic (not currently assigned to any animal)
+-- Call this to push animals away from a source animal's food target
+function Game:applyRepulsionAura(sourceAnimal, radius, pushForce, dt)
+    if not sourceAnimal.targetFood then return end
+    local fx, fy = sourceAnimal.targetFood.x, sourceAnimal.targetFood.y
+    for _, animal in ipairs(self.animals) do
+        if animal ~= sourceAnimal then
+            local d = util.distance(animal.x, animal.y, fx, fy)
+            if d < radius and d > 0 then
+                local pushX = (animal.x - fx) / d * pushForce
+                local pushY = (animal.y - fy) / d * pushForce
+                animal.x = animal.x + pushX * dt
+                animal.y = animal.y + pushY * dt
+            end
+        end
+    end
+end
+
 -- Save/Load
 function Game:saveGame()
     local animalStates = {}
