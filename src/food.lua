@@ -4,7 +4,7 @@ local Sprites = require("src.sprites")
 local FoodManager = {}
 FoodManager.__index = FoodManager
 
-local FOOD_TYPES = {"grass", "berries", "corn"}
+local FOOD_TYPES = {"grass", "berries", "corn", "mushrooms", "fish", "flowers", "pumpkin"}
 
 function FoodManager.new(fieldW, fieldH)
     local self = setmetatable({}, FoodManager)
