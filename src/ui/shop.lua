@@ -4,13 +4,15 @@ local Economy = require("src.economy")
 local Sprites = require("src.sprites")
 local util = require("src.util")
 
+local perksData = require("data.perks_data")
+
 local Shop = {}
 Shop.__index = Shop
 setmetatable(Shop, { __index = Panel })
 
 -- All animal types in display order
-local ANIMAL_ORDER = {"cow", "chicken", "pig", "sheep"}
-local ROW_HEIGHT = 160
+local ANIMAL_ORDER = {"cow", "chicken", "pig", "cat", "sheep", "goat"}
+local ROW_HEIGHT = 200
 
 function Shop.new()
     local self = Panel.new({ title = "INVENTORY" })
@@ -53,7 +55,7 @@ function Shop:buildRows(game)
             local hasRoom = #game.animals < game:getMaxAnimals()
 
             local buyBtn = Button.new({
-                x = cx, y = rowY + 125,
+                x = cx, y = rowY + 165,
                 w = math.floor(cw * 0.48), h = 28,
                 text = "Buy " .. Economy.formatMoney(cost),
                 color = {0.25, 0.50, 0.30},
@@ -75,7 +77,7 @@ function Shop:buildRows(game)
             local lvlBtn
             if atMax then
                 lvlBtn = Button.new({
-                    x = cx + math.floor(cw * 0.52), y = rowY + 125,
+                    x = cx + math.floor(cw * 0.52), y = rowY + 165,
                     w = math.floor(cw * 0.48), h = 28,
                     text = "MAX LEVEL",
                     color = {0.35, 0.35, 0.35},
@@ -90,7 +92,7 @@ function Shop:buildRows(game)
                 local canLevel = xp >= xpNeeded and game.money >= lvlCost
 
                 lvlBtn = Button.new({
-                    x = cx + math.floor(cw * 0.52), y = rowY + 125,
+                    x = cx + math.floor(cw * 0.52), y = rowY + 165,
                     w = math.floor(cw * 0.48), h = 28,
                     text = "Level Up " .. Economy.formatMoney(lvlCost),
                     color = {0.40, 0.45, 0.60},
@@ -299,10 +301,49 @@ function Shop:drawUnlockedRow(cx, rowY, cw, data, animalId, game)
     love.graphics.print("Owned: " .. ownedCount, cx + 6, statsY + 32)
 
     -- Level bonus info
+    local perkY = statsY + 48
     if lvl > 0 then
         love.graphics.setColor(0.50, 0.80, 0.50, 0.7)
-        love.graphics.print("Lv bonus: +" .. (lvl * 10) .. "% earn, +" .. (lvl * 5) .. "% spd", cx + 6, statsY + 48)
+        love.graphics.print("Lv bonus: +" .. (lvl * 10) .. "% earn, +" .. (lvl * 5) .. "% spd", cx + 6, perkY)
+        perkY = perkY + 14
     end
+
+    -- Perk info
+    local perk = perksData[animalId]
+    if perk then
+        -- Favorite food
+        love.graphics.setColor(0.7, 0.9, 0.5, 1)
+        love.graphics.print("Fav: " .. (perk.favoriteFood or "none") .. " (+50% speed)", cx + 6, perkY)
+        perkY = perkY + 14
+
+        -- Trade-off
+        if perk.tradeOff then
+            love.graphics.setColor(0.9, 0.4, 0.4, 0.8)
+            love.graphics.print("Trait: " .. perk.tradeOff.name .. " - " .. perk.tradeOff.description, cx + 6, perkY)
+            perkY = perkY + 14
+        end
+
+        -- Max-level perk
+        if perk.maxLevelPerk then
+            if lvl >= maxLevel then
+                -- Unlocked: show in gold
+                love.graphics.setColor(1, 0.85, 0.25, 1)
+                love.graphics.print("Lv" .. maxLevel .. " Perk: " .. perk.maxLevelPerk.name .. " - " .. perk.maxLevelPerk.description, cx + 6, perkY)
+            else
+                -- Locked: show in gray
+                love.graphics.setColor(0.5, 0.5, 0.5, 0.7)
+                love.graphics.print("[Lv" .. maxLevel .. "] " .. perk.maxLevelPerk.name .. " - " .. perk.maxLevelPerk.description, cx + 6, perkY)
+            end
+            perkY = perkY + 14
+        else
+            -- No max level perk
+            love.graphics.setColor(0.5, 0.5, 0.5, 0.5)
+            love.graphics.print("Perk: Locked (Skill Tree)", cx + 6, perkY)
+            perkY = perkY + 14
+        end
+    end
+
+    love.graphics.setColor(1, 1, 1, 1)
 end
 
 function Shop:mousepressed(x, y, button)
