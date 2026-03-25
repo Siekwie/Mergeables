@@ -29,6 +29,12 @@ return {
                 effect = { type = "unlock_animal", value = "sheep" },
             },
             {
+                id = "p1_unlock_cat", name = "Cat Tower",
+                description = "Unlock cats",
+                baseCost = 6, costScale = 1, maxLevel = 1,
+                effect = { type = "unlock_animal", value = "cat" },
+            },
+            {
                 id = "p1_earning", name = "Keen Eye",
                 description = "+15%% earnings per level",
                 baseCost = 2, costScale = 1.6, maxLevel = 10,
