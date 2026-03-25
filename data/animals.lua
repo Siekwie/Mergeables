@@ -104,6 +104,8 @@ return {
             { name = "Goat",         size = 52, earningMult = 3 },
             { name = "Billy",        size = 68, earningMult = 11 },
             { name = "Golden Billy", size = 84, earningMult = 38 },
+        },
+    },
     cat = {
         id = "cat",
         name = "Cat",

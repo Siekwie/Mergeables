@@ -245,9 +245,29 @@ function Animal:update(dt, fieldW, fieldH, foods, game)
                         amount = amount * (1 + bonus)
                     end
 
+                    -- Apply skill tree per-animal earning bonus
+                    if game.skillTree then
+                        local stEarningBonus = game.skillTree:getAnimalEarningBonus(self.type)
+                        if stEarningBonus > 0 then
+                            amount = amount * (1 + stEarningBonus)
+                        end
+                    end
+
                     game:addMoney(amount)
                     -- Grant XP to this animal type (higher tier = more XP)
                     game:addAnimalXP(self.type, 1 + (self.tier - 1))
+
+                    -- RNG chance to award skill point from food
+                    if game.skillTree then
+                        local chance = game.skillTree:getFoodSkillPointChance()
+                        if math.random() < chance then
+                            game.skillTree:addPoints(1)
+                            if game.particles then
+                                game.particles:spawnTextPopup(self.x, self.y - self.size * 0.8, "+1 SP!", {0.30, 0.80, 0.40})
+                            end
+                        end
+                    end
+
                     if game.particles then
                         game.particles:spawnCoinPopup(self.x, self.y - self.size * 0.5, amount)
                     end

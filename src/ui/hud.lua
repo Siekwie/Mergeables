@@ -30,9 +30,11 @@ function HUD.new()
     self.activeTab = nil
     self.tabButtons = {}
     self.onTabClick = nil
+    self.onSkillTreeClick = nil
     self.onResetZoom = nil
     self.onTogglePanel = nil
     self.resetZoomBtn = nil
+    self.skillTreeBtn = nil
     self.togglePanelBtn = nil
     self.settingsBtn = nil
     self:rebuildButtons()
@@ -92,6 +94,19 @@ function HUD:rebuildButtons()
         end,
     })
 
+    -- Skill Tree button (left of toggle panel button)
+    self.skillTreeBtn = Button.new({
+        x = startX - 108, y = 10, w = 64, h = 30,
+        text = "Skills",
+        color = {0.20, 0.42, 0.28},
+        cornerRadius = 5,
+        onClick = function()
+            if self.onSkillTreeClick then
+                self.onSkillTreeClick()
+            end
+        end,
+    })
+
     -- Toggle Panel button
     self.togglePanelBtn = Button.new({
         x = startX - 36, y = 10, w = 28, h = 30,
@@ -126,6 +141,7 @@ function HUD:update(dt, game, mx, my)
     end
     self.settingsBtn:update(mx, my)
     self.resetZoomBtn:update(mx, my)
+    self.skillTreeBtn:update(mx, my)
     self.togglePanelBtn:update(mx, my)
 
     if game.panelVisible then
@@ -188,6 +204,20 @@ function HUD:draw(game)
         btn:draw()
     end
 
+    -- Skill Tree button
+    if self.skillTreeActive then
+        self.skillTreeBtn.color = {0.30, 0.55, 0.35}
+    else
+        self.skillTreeBtn.color = {0.20, 0.42, 0.28}
+    end
+    self.skillTreeBtn:draw()
+
+    -- Skill points display next to button
+    if game.skillTree then
+        love.graphics.setColor(0.30, 0.80, 0.40, 0.8)
+        love.graphics.print(string.format("%.1f SP", game.skillTree.points), self.skillTreeBtn.x - 52, 18)
+    end
+
     -- Toggle Panel button
     self.togglePanelBtn:draw()
 
@@ -206,6 +236,7 @@ function HUD:mousepressed(x, y, button)
         if btn:click() then return true end
     end
     if self.settingsBtn:click() then return true end
+    if self.skillTreeBtn:click() then return true end
     if self.resetZoomBtn:click() then return true end
     if self.togglePanelBtn:click() then return true end
     return false

@@ -6,6 +6,7 @@ local FoodManager = require("src.food")
 local Merge = require("src.merge")
 local Upgrades = require("src.upgrades")
 local Prestige = require("src.prestige")
+local SkillTree = require("src.skill_tree")
 local Particles = require("src.particles")
 local Save = require("src.save")
 local Economy = require("src.economy")
@@ -14,6 +15,7 @@ local Shop = require("src.ui.shop")
 local UpgradePanel = require("src.ui.upgrade_panel")
 local PrestigePanel = require("src.ui.prestige_panel")
 local SettingsPanel = require("src.ui.settings_panel")
+local SkillTreePanel = require("src.ui.skill_tree_panel")
 
 local Game = {}
 Game.__index = Game
@@ -41,6 +43,7 @@ function Game.new()
     -- Systems
     self.upgrades = Upgrades.new()
     self.prestige = Prestige.new()
+    self.skillTree = SkillTree.new()
     self.particles = Particles.new()
     self.camera = Camera.new()
 
@@ -54,11 +57,15 @@ function Game.new()
     self.upgradePanel = UpgradePanel.new()
     self.prestigePanel = PrestigePanel.new()
     self.settingsPanel = SettingsPanel.new()
+    self.skillTreePanel = SkillTreePanel.new()
     self.activePanel = nil
     self.panelVisible = true
 
     self.hud.onTabClick = function(tab)
         self:togglePanel(tab)
+    end
+    self.hud.onSkillTreeClick = function()
+        self:toggleSkillTree()
     end
     self.hud.onResetZoom = function()
         local rfw, rfh = self:getFieldSize()
@@ -165,6 +172,16 @@ function Game:togglePanel(panelName)
     end
 end
 
+function Game:toggleSkillTree()
+    if self.skillTreePanel.visible then
+        self.skillTreePanel:hide()
+        self.hud.skillTreeActive = false
+    else
+        self.skillTreePanel:show()
+        self.hud.skillTreeActive = true
+    end
+end
+
 function Game:update(dt)
     local mx, my = love.mouse.getPosition()
     local fw, fh = self:getFieldSize()
@@ -173,14 +190,15 @@ function Game:update(dt)
     self.camera:update(dt, fw, fh)
 
     -- Update food
-    local foodSpawnBonus = self.upgrades:getFoodSpawnBonus() + self.prestige:getFoodSpawnBonus()
+    local foodSpawnBonus = self.upgrades:getFoodSpawnBonus() + self.prestige:getFoodSpawnBonus() + self.skillTree:getFoodSpawnBonus()
     self.foodManager:update(dt, foodSpawnBonus)
 
     -- Update animals
     for _, animal in ipairs(self.animals) do
         if animal ~= self.draggedAnimal then
             local lvl = self:getAnimalLevel(animal.type)
-            animal:setSpeed(self.upgrades:getSpeedBonus(), self.prestige:getSpeedBonus(), lvl)
+            local stSpeed = self.skillTree:getSpeedBonus() + self.skillTree:getAnimalSpeedBonus(animal.type)
+            animal:setSpeed(self.upgrades:getSpeedBonus(), self.prestige:getSpeedBonus() + stSpeed, lvl)
             animal:update(dt, fw, fh, self.foodManager:getFoods(), self)
         end
     end
@@ -192,6 +210,9 @@ function Game:update(dt)
     self.hud:update(dt, self, mx, my)
     if self.panelVisible and self.activePanel then
         self.activePanel:update(mx, my, self)
+    end
+    if self.skillTreePanel.visible then
+        self.skillTreePanel:update(mx, my, self)
     end
 
     -- Update merge target highlight
@@ -284,6 +305,11 @@ function Game:draw()
         self.activePanel:draw()
     end
 
+    -- Draw skill tree overlay (fullscreen, on top of everything)
+    if self.skillTreePanel.visible then
+        self.skillTreePanel:draw(self)
+    end
+
     -- Draw drag hint
     if self.draggedAnimal and not self.mergeTarget then
         love.graphics.setColor(1, 1, 1, 0.5)
@@ -295,6 +321,11 @@ end
 
 function Game:mousepressed(x, y, button)
     if self.hud:mousepressed(x, y, button) then return end
+
+    if self.skillTreePanel.visible then
+        self.skillTreePanel:mousepressed(x, y, button, self)
+        return
+    end
 
     if self.panelVisible and self.activePanel then
         if self.activePanel:mousepressed(x, y, button) then return end
@@ -319,6 +350,11 @@ function Game:mousepressed(x, y, button)
 end
 
 function Game:mousereleased(x, y, button)
+    if self.skillTreePanel.visible then
+        self.skillTreePanel:mousereleased(x, y, button)
+        return
+    end
+
     if button == 2 or button == 3 then
         self.camera:stopDrag()
         return
@@ -341,12 +377,17 @@ function Game:mousereleased(x, y, button)
 end
 
 function Game:mousemoved(x, y, dx, dy)
+    if self.skillTreePanel.visible then
+        self.skillTreePanel:mousemoved(x, y, dx, dy)
+        return
+    end
     if self.camera:isDragging() then
         self.camera:drag(x, y)
     end
 end
 
 function Game:wheelmoved(x, y)
+    if self.skillTreePanel.visible then return end
     local mx, my = love.mouse.getPosition()
     if self.panelVisible and self.activePanel and self.activePanel:wheelmoved(mx, my, x, y) then
         return
@@ -365,7 +406,13 @@ function Game:keypressed(key)
         self:togglePanel("Upgrades")
     elseif key == "3" then
         self:togglePanel("Prestige")
+    elseif key == "4" then
+        self:toggleSkillTree()
     elseif key == "escape" then
+        if self.skillTreePanel.visible then
+            self:toggleSkillTree()
+            return
+        end
         if self.activePanel then
             self.activePanel:hide()
             self.activePanel = nil
@@ -424,10 +471,13 @@ function Game:levelUpAnimal(animalType)
     self:spendMoney(cost)
     entry.level = entry.level + 1
     entry.xp = 0
+    -- Award skill tree points for leveling up
+    self.skillTree:addPoints(0.25)
     -- Update speed for all animals of this type
     for _, animal in ipairs(self.animals) do
         if animal.type == animalType then
-            animal:setSpeed(self.upgrades:getSpeedBonus(), self.prestige:getSpeedBonus(), entry.level)
+            local stSpeed = self.skillTree:getSpeedBonus() + self.skillTree:getAnimalSpeedBonus(animalType)
+            animal:setSpeed(self.upgrades:getSpeedBonus(), self.prestige:getSpeedBonus() + stSpeed, entry.level)
         end
     end
     return true
@@ -444,7 +494,7 @@ function Game:spendMoney(amount)
 end
 
 function Game:getMaxAnimals()
-    return BASE_MAX_ANIMALS + self.upgrades:getExtraCapacity() + self.prestige:getExtraCapacity()
+    return BASE_MAX_ANIMALS + self.upgrades:getExtraCapacity() + self.prestige:getExtraCapacity() + self.skillTree:getExtraCapacity()
 end
 
 function Game:getEarningBonus()
@@ -452,11 +502,11 @@ function Game:getEarningBonus()
 end
 
 function Game:getPrestigeEarningBonus()
-    return self.prestige:getEarningMultiplier()
+    return self.prestige:getEarningMultiplier() + self.skillTree:getEarningMultiplier()
 end
 
 function Game:getFoodValueBonus()
-    return self.upgrades:getFoodValueBonus()
+    return self.upgrades:getFoodValueBonus() + self.skillTree:getFoodValueBonus()
 end
 
 function Game:buyAnimal(animalType)
@@ -479,7 +529,8 @@ function Game:buyAnimal(animalType)
     local y = util.randomFloat(100, fh - 100)
     local animal = Animal.new(animalType, 1, x, y)
     local lvl = self:getAnimalLevel(animalType)
-    animal:setSpeed(self.upgrades:getSpeedBonus(), self.prestige:getSpeedBonus(), lvl)
+    local stSpeed = self.skillTree:getSpeedBonus() + self.skillTree:getAnimalSpeedBonus(animalType)
+    animal:setSpeed(self.upgrades:getSpeedBonus(), self.prestige:getSpeedBonus() + stSpeed, lvl)
     table.insert(self.animals, animal)
     return true
 end
@@ -487,7 +538,8 @@ end
 function Game:applyUpgrades()
     for _, animal in ipairs(self.animals) do
         local lvl = self:getAnimalLevel(animal.type)
-        animal:setSpeed(self.upgrades:getSpeedBonus(), self.prestige:getSpeedBonus(), lvl)
+        local stSpeed = self.skillTree:getSpeedBonus() + self.skillTree:getAnimalSpeedBonus(animal.type)
+        animal:setSpeed(self.upgrades:getSpeedBonus(), self.prestige:getSpeedBonus() + stSpeed, lvl)
     end
     self:applyFieldSize()
 end
@@ -497,10 +549,14 @@ end
 function Game:doPrestigeT1()
     local points = Economy.calcPrestigePoints(self.totalEarned)
     local bonus = self.prestige:getT1CurrencyBonus()
-    if bonus > 0 then
-        points = math.floor(points * (1 + bonus))
+    local stPrestigeBonus = self.skillTree:getPrestigeBonus()
+    if bonus > 0 or stPrestigeBonus > 0 then
+        points = math.floor(points * (1 + bonus + stPrestigeBonus))
     end
     if points <= 0 then return end
+
+    -- Award skill tree points: T1 prestige gives 1 skill point
+    self.skillTree:addPoints(1)
 
     self.prestige:addPoints(1, points)
 
@@ -540,6 +596,9 @@ function Game:doPrestigeT2()
     end
     if points <= 0 then return end
 
+    -- Award skill tree points: T2 prestige gives 2 skill points
+    self.skillTree:addPoints(2)
+
     self.prestige:addPoints(2, points)
 
     -- Give starting T2 currency from T3 upgrades
@@ -578,6 +637,9 @@ end
 function Game:doPrestigeT3()
     local points = Economy.calcT3Points(self.prestige.tiers[2].totalEarned)
     if points <= 0 then return end
+
+    -- Award skill tree points: T3 prestige gives 3 skill points
+    self.skillTree:addPoints(3)
 
     self.prestige:addPoints(3, points)
 
@@ -622,6 +684,7 @@ function Game:reloadGame()
 
     self.upgrades:reset()
     self.prestige = Prestige.new()
+    self.skillTree = SkillTree.new()
 
     -- Reset field and food to base size
     local fw, fh = self:getFieldSize()
@@ -674,6 +737,7 @@ function Game:saveGame()
         animals = animalStates,
         upgrades = self.upgrades:getState(),
         prestige = self.prestige:getState(),
+        skillTree = self.skillTree:getState(),
         animalLevels = self.animalLevels,
         timestamp = os.time(),
     }
@@ -704,6 +768,11 @@ function Game:loadGame()
     -- Restore prestige
     if state.prestige then
         self.prestige:loadState(state.prestige)
+    end
+
+    -- Restore skill tree (not reset by prestige)
+    if state.skillTree then
+        self.skillTree:loadState(state.skillTree)
     end
 
     -- Restore animal levels

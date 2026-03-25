@@ -49,7 +49,8 @@ function Particles:draw()
     for _, c in ipairs(self.coinPopups) do
         love.graphics.setColor(0.15, 0.12, 0.08, c.alpha * 0.5)
         love.graphics.print(c.text, c.x + 1, c.y + 1)
-        love.graphics.setColor(0.2, 0.75, 0.15, c.alpha)
+        local col = c.color or {0.2, 0.75, 0.15}
+        love.graphics.setColor(col[1], col[2], col[3], c.alpha)
         love.graphics.print(c.text, c.x, c.y)
     end
     love.graphics.setColor(1, 1, 1, 1)
@@ -87,6 +88,18 @@ function Particles:spawnCoinPopup(x, y, amount)
         life = 1.2,
         maxLife = 1.2,
         alpha = 1,
+    })
+end
+
+function Particles:spawnTextPopup(x, y, text, color)
+    table.insert(self.coinPopups, {
+        x = x - 15,
+        y = y,
+        text = text,
+        life = 1.5,
+        maxLife = 1.5,
+        alpha = 1,
+        color = color,
     })
 end
 
