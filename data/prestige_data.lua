@@ -29,6 +29,12 @@ return {
                 effect = { type = "unlock_animal", value = "sheep" },
             },
             {
+                id = "p1_unlock_goat", name = "Goat Milk",
+                description = "Unlock Goats",
+                baseCost = 5, costScale = 1, maxLevel = 1,
+                effect = { type = "unlock_animal", value = "goat" },
+            },
+            {
                 id = "p1_unlock_cat", name = "Cat Tower",
                 description = "Unlock cats",
                 baseCost = 6, costScale = 1, maxLevel = 1,

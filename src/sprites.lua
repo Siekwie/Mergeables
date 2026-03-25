@@ -26,6 +26,8 @@ function Sprites.drawAnimal(animalType, tier, x, y, size, flipX, bobOffset)
         Sprites.drawPig(size, bc, sc, tier)
     elseif animalType == "sheep" then
         Sprites.drawSheep(size, bc, sc, tier)
+    elseif animalType == "goat" then
+        Sprites.drawGoat(size, bc, sc, tier)
     elseif animalType == "cat" then
         Sprites.drawCat(size, bc, sc, tier)
     else
@@ -248,6 +250,77 @@ function Sprites.drawSheep(size, bc, sc, tier)
         love.graphics.setColor(1, 0.85, 0.15, 0.15)
         love.graphics.ellipse("fill", 0, 0, hw * 1.3, hh * 1.3)
     end
+end
+
+function Sprites.drawGoat(size, bc, sc, tier)
+    local hw = size * 0.40
+    local hh = size * 0.28
+
+    -- Body (slightly rectangular feel)
+    love.graphics.setColor(bc)
+    love.graphics.ellipse("fill", 0, 0, hw, hh)
+
+    -- Head
+    love.graphics.setColor(bc)
+    love.graphics.ellipse("fill", hw * 0.72, -hh * 0.25, hw * 0.28, hh * 0.40)
+
+    -- Horns (curved backward from top of head)
+    love.graphics.setColor(sc)
+    love.graphics.setLineWidth(math.max(2, size * 0.04))
+    -- Left horn
+    love.graphics.line(
+        hw * 0.62, -hh * 0.55,
+        hw * 0.50, -hh * 0.90,
+        hw * 0.35, -hh * 1.05
+    )
+    -- Right horn
+    love.graphics.line(
+        hw * 0.82, -hh * 0.55,
+        hw * 0.70, -hh * 0.90,
+        hw * 0.55, -hh * 1.05
+    )
+    love.graphics.setLineWidth(1)
+
+    -- Ears (angled to the sides)
+    love.graphics.setColor(bc[1] * 0.85, bc[2] * 0.85, bc[3] * 0.85)
+    love.graphics.ellipse("fill", hw * 0.50, -hh * 0.40, hw * 0.10, hh * 0.15)
+    love.graphics.ellipse("fill", hw * 0.92, -hh * 0.35, hw * 0.10, hh * 0.15)
+
+    -- Eyes
+    love.graphics.setColor(0.1, 0.1, 0.1)
+    love.graphics.circle("fill", hw * 0.68, -hh * 0.32, size * 0.03)
+    love.graphics.circle("fill", hw * 0.82, -hh * 0.30, size * 0.025)
+
+    -- Beard (small triangle hanging below chin)
+    love.graphics.setColor(sc)
+    love.graphics.polygon("fill",
+        hw * 0.72, hh * 0.10,
+        hw * 0.78, hh * 0.10,
+        hw * 0.75, hh * 0.35
+    )
+
+    -- Legs (slightly thinner than cow legs)
+    love.graphics.setColor(sc)
+    local legW = hw * 0.08
+    local legH = hh * 0.50
+    love.graphics.rectangle("fill", -hw * 0.50 - legW/2, hh * 0.70, legW, legH)
+    love.graphics.rectangle("fill", -hw * 0.15 - legW/2, hh * 0.70, legW, legH)
+    love.graphics.rectangle("fill", hw * 0.15 - legW/2, hh * 0.70, legW, legH)
+    love.graphics.rectangle("fill", hw * 0.45 - legW/2, hh * 0.70, legW, legH)
+
+    -- Hooves
+    love.graphics.setColor(sc[1] * 0.6, sc[2] * 0.6, sc[3] * 0.6)
+    local hoofH = hh * 0.10
+    love.graphics.rectangle("fill", -hw * 0.50 - legW/2, hh * 0.70 + legH - hoofH, legW, hoofH)
+    love.graphics.rectangle("fill", -hw * 0.15 - legW/2, hh * 0.70 + legH - hoofH, legW, hoofH)
+    love.graphics.rectangle("fill", hw * 0.15 - legW/2, hh * 0.70 + legH - hoofH, legW, hoofH)
+    love.graphics.rectangle("fill", hw * 0.45 - legW/2, hh * 0.70 + legH - hoofH, legW, hoofH)
+
+    -- Tail (short upward-pointing line)
+    love.graphics.setColor(sc)
+    love.graphics.setLineWidth(2)
+    love.graphics.line(-hw * 0.85, -hh * 0.05, -hw * 0.95, -hh * 0.35)
+    love.graphics.setLineWidth(1)
 end
 
 function Sprites.drawCat(size, bc, sc, tier)
